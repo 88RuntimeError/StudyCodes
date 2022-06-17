@@ -1,6 +1,6 @@
 import requests
-import os
 from lxml import etree
+from pymysql import *
 
 html = requests.get('https://kaijiang.500.com/shtml/ssq/22052.shtml')
 page = etree.HTML(html.text)
@@ -8,27 +8,27 @@ page = etree.HTML(html.text)
 href_list = page.xpath('/html/body/div[6]/div[3]/div[2]/div[1]/div[1]/div[3]/span/div/a/@href')
 page_id = page.xpath('/html/body/div[6]/div[3]/div[2]/div[1]/div[1]/div[3]/span/div/a/text()')
 dic = {}
+
+conn = connect(host='localhost',port=3306,user='root',password='123456',db='twocolorballs',charset='utf8')
+cur = conn.cursor()
+
 for index,i in enumerate(page_id):
-    dic[i] = href_list[index]   
+    try:
+        sql = "insert into urls values (%s,%s)"
+        params = (i, href_list[index])
+        cur.execute(sql,params)
+        conn.commit()
+        print(i,'增加成功!')
+    except:
+        conn.rollback()
+        print('增加失败')
+    
+cur.close()
+conn.close()
 
-if not os.path.exists('双色球各期网址数据.txt'):
-    with open('双色球各期网址数据.txt', 'w') as f:
-        pass
-
-with open('双色球各期网址数据.txt', 'r') as f:
-    resource = f.read()
-    if resource:
-        resource = eval(resource)
 
 
-if not resource:
-    with open('双色球各期网址数据.txt', 'w') as file:
-        file.write(str(dic))
-        print('已新建双色球各期网址数据')
 
-else:
-    dic.update(resource)
-    with open('双色球各期网址数据.txt', 'w') as file:
-        file.write(str(dic))
-        print('已更新双色球各期网址数据')
+
+
     
